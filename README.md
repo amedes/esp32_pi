@@ -12,4 +12,4 @@ idf.py -p serial flash monitor
 ```
 
 # Sample output
-![sample output](./es32_pi_output.png "output")
+![output](/es32_pi_output.png "output")
