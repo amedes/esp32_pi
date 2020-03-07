@@ -1,0 +1,17 @@
+menu "ESP32 Pi Configuration"
+
+config ENABLE_LED
+bool "Blink LED to show worker task usage"
+default "y"
+
+config LED_PIN
+int "GPIO number connecting LED"
+depends on ENABLE_LED
+range 0 33
+default 2
+
+config SUPPRESS_PI_DIGITS
+bool "Suppress Pi digits"
+default "y"
+
+endmenu
