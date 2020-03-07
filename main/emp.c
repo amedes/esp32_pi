@@ -26,6 +26,8 @@ void emp_init(emp_t *p, uint16_t size)
 {
     uint32_t *mem;
 
+//    if (p->word) free(p->word);
+
     mem = calloc(size, sizeof(uint32_t));
     if (mem == NULL) {
 	ESP_LOGE(TAG, "malloc fail");
@@ -194,27 +196,19 @@ void emp_srl(emp_t *dst, emp_t *src, int shift)
     uint32_t t0, t1 = 0;
     
     if (shift == 0) return;
-    if (shift < 0 || shift > 31) {
+    if (shift < 0 || shift > 32) {
 	ESP_LOGE(TAG, "shift out of range: %d", shift);
 	exit(1);
     }
-
-    //if ((src->word[src->top] == 0) && (src->bottom > 0)) src->top--;
-    p = &dst->word[dst->top];
-    q = &src->word[src->top];
-    n = src->top - src->bottom + 1;
 
     n = (src->top / 2) - (src->bottom / 2) + 1;
     p = &dst->word[src->top & ~1];
     q = &src->word[src->top & ~1];
     dst->top = src->top;
 
-    //printf("emp_srl: n = %d\n", n);
-    //printf("emp_srl: shift = %d\n", shift);
-
     // 32bit access
     asm volatile(
-		    "ssr	%5\n\t"
+		    "wsr.sar	%5\n\t"			// SAR = shift
 		    "loopgtz	%4, %=f\n\t"
 		    "l32i	%2, %1, 4\n\t"		// t0 = *(q + 1)
 		    "src	%3, %3, %2\n\t"		// t1 = (t1 | t0) >> shift
@@ -227,6 +221,42 @@ void emp_srl(emp_t *dst, emp_t *src, int shift)
 		    "%=:\n\t"
 		    : "+r"(p), "+r"(q), "=r"(t0), "+r"(t1)
 		    : "r"(n), "r"(shift)
+		);
+}
+
+void emp_sll(emp_t *dst, emp_t *src, int shift)
+{
+    uint32_t *p;
+    uint32_t *q;
+    uint32_t n;
+    uint32_t t0, t1 = 0;
+    
+    if (shift == 0) return;
+    if (shift < 0 || shift > 32) {
+	ESP_LOGE(TAG, "shift out of range: %d", shift);
+	exit(1);
+    }
+
+    n = (src->top / 2) - (src->bottom / 2) + 1;
+    p = &dst->word[src->bottom & ~1] - 2;
+    q = &src->word[src->bottom & ~1] - 2;
+    dst->top = src->top;
+
+    // 32bit access
+    asm volatile(
+		    "wsr.sar	%5\n\t"			// SAR = 32 - shift
+		    "loopgtz	%4, %=f\n\t"
+		    "l32i	%2, %1, 8\n\t"		// t0 = *(q + 2)
+		    "src	%3, %2, %3\n\t"		// t1 = (t1 | t0) << shift
+		    "s32i	%3, %0, 8\n\t"		// *(p + 2) = t1
+		    "l32i	%3, %1, 12\n\t"		// t1 = *(q + 3)
+		    "addi	%1, %1, 8\n\t"		// q += 2
+		    "addi	%0, %0, 8\n\t"		// p += 2
+		    "src	%2, %3, %2\n\t"		// t0 = (t0 | t1) << shift
+		    "s32i	%2, %0, 4\n\t"		// *p = t0
+		    "%=:\n\t"
+		    : "+r"(p), "+r"(q), "=r"(t0), "+r"(t1)
+		    : "r"(n), "r"(32 - shift)
 		);
 }
 

@@ -20,6 +20,7 @@ void emp_sub(emp_t *dst, emp_t *src);
 void emp_mul(emp_t *dst, emp_t *src, uint32_t m);
 void emp_div(emp_t *dst, emp_t *src, uint32_t d);
 void emp_srl(emp_t *dst, emp_t *src, int shift);
+void emp_sll(emp_t *dst, emp_t *src, int shift);
 void emp_setint(emp_t *dst, uint32_t num);
 void emp_printhex(emp_t *src);
 void emp_printdec(emp_t *src);
