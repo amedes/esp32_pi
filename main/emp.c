@@ -26,8 +26,6 @@ void emp_init(emp_t *p, uint16_t size)
 {
     uint32_t *mem;
 
-    if (p->word) free(p->word);
-
     mem = calloc(size, sizeof(uint32_t));
     if (mem == NULL) {
 	ESP_LOGE(TAG, "malloc fail");
